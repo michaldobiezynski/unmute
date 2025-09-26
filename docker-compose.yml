@@ -39,7 +39,9 @@ services:
     environment:
       - KYUTAI_STT_URL=ws://stt:8080
       - KYUTAI_TTS_URL=ws://tts:8080
-      - KYUTAI_LLM_URL=http://llm:8000
+      - KYUTAI_LLM_URL=https://api.openai.com/v1
+      - KYUTAI_LLM_MODEL=gpt-4o
+      - KYUTAI_LLM_API_KEY=$OPEN_AI_API_KEY
       - NEWSAPI_API_KEY=$NEWSAPI_API_KEY
     labels:
       - "traefik.enable=true"
@@ -98,37 +100,6 @@ services:
               count: all
               capabilities: [gpu]
 
-  llm:
-    image: vllm/vllm-openai:v0.9.1
-    command:
-      [
-        # NOTE: Change the LLM here if you want.
-        # Using Llama-3.1-70B-Instruct for maximum capability (requires 40GB+ VRAM)
-        "--model=meta-llama/Llama-3.1-70B-Instruct",
-        # NOTE: You can adapt this based on your GPU memory.
-        # A higher value takes more memory but supports longer conversations.
-        "--max-model-len=32000",
-        "--dtype=bfloat16",
-        # NOTE: Change this based on your GPU memory.
-        # Lower value needed for large models to prevent OOM.
-        "--gpu-memory-utilization=0.8",
-        # NOTE: Additional parameters for large models
-        # vLLM auto-detects GPUs by default - no need to specify for single GPU
-        # Only add this if you have multiple GPUs and want to limit which ones to use
-        # "--tensor-parallel-size=1",
-      ]
-    volumes:
-      - ./volumes/hf-cache:/root/.cache/huggingface
-      - ./volumes/vllm-cache:/root/.cache/vllm
-    environment:
-      - HUGGING_FACE_HUB_TOKEN=$HUGGING_FACE_HUB_TOKEN
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
 
 networks:
   default:
