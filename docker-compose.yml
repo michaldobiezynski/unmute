@@ -103,15 +103,19 @@ services:
     command:
       [
         # NOTE: Change the LLM here if you want.
-        # (caution: gemma-3-1b-it also exists but it's slow on vLLM: https://github.com/vllm-project/vllm/issues/19575)
-        "--model=meta-llama/Llama-3.2-1B-Instruct",
+        # Using Llama-3.1-70B-Instruct for maximum capability (requires 40GB+ VRAM)
+        "--model=meta-llama/Llama-3.1-70B-Instruct",
         # NOTE: You can adapt this based on your GPU memory.
         # A higher value takes more memory but supports longer conversations.
-        "--max-model-len=1536",
+        "--max-model-len=32000",
         "--dtype=bfloat16",
         # NOTE: Change this based on your GPU memory.
-        # A higher value can make inference faster.
-        "--gpu-memory-utilization=0.4",
+        # Lower value needed for large models to prevent OOM.
+        "--gpu-memory-utilization=0.8",
+        # NOTE: Additional parameters for large models
+        # vLLM auto-detects GPUs by default - no need to specify for single GPU
+        # Only add this if you have multiple GPUs and want to limit which ones to use
+        # "--tensor-parallel-size=1",
       ]
     volumes:
       - ./volumes/hf-cache:/root/.cache/huggingface
