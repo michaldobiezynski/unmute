@@ -84,7 +84,7 @@ const TranscriptModal = ({
       )}
       
       <div
-        className="bg-darkgray border-2 border-green shadow-lg w-full max-w-3xl max-h-[80vh] flex flex-col"
+        className="bg-darkgray border-2 border-green shadow-lg w-full max-w-5xl max-h-[80vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -123,7 +123,7 @@ const TranscriptModal = ({
         {/* Transcript content */}
         <div
           ref={contentRef}
-          className="flex-1 w-full px-4 py-4 bg-background overflow-y-auto"
+          className="flex-1 w-full px-6 py-4 bg-background overflow-y-auto"
           style={{ minHeight: "400px" }}
         >
           {chatHistory.length === 0 ? (
@@ -131,25 +131,25 @@ const TranscriptModal = ({
               No conversation yet. Start talking to see the transcript here.
             </p>
           ) : (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-4 w-full">
               {chatHistory.map((message, index) => (
-                <div key={`${message.role}-${index}`} className="flex flex-col gap-1">
+                <div key={`${message.role}-${index}`} className="w-full">
                   <span
                     className={clsx(
-                      "font-semibold text-sm",
+                      "font-semibold text-sm inline-block mb-1",
                       message.role === "user" ? "text-blue-400" : "text-green"
                     )}
                   >
                     {message.role === "user" ? "You" : "Assistant"}:
                   </span>
-                  <p
+                  <div
                     className={clsx(
-                      "whitespace-pre-wrap break-words text-base leading-relaxed",
+                      "whitespace-pre-wrap break-words text-base leading-relaxed w-full",
                       message.role === "user" ? "text-blue-100" : "text-white"
                     )}
                   >
                     {message.content}
-                  </p>
+                  </div>
                 </div>
               ))}
             </div>
