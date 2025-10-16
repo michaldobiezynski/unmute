@@ -24,7 +24,7 @@ import { useGoogleAnalytics } from "./useGoogleAnalytics";
 import clsx from "clsx";
 import { useBackendServerUrl } from "./useBackendServerUrl";
 import { RECORDING_CONSENT_STORAGE_KEY } from "./ConsentModal";
-import { Subtitles as SubtitlesIcon, ScrollText } from "lucide-react";
+import { Subtitles as SubtitlesIcon, ScrollText, Check } from "lucide-react";
 
 const Unmute = () => {
   const { isDevMode, showSubtitles, toggleSubtitles, showTranscript, toggleTranscript } = useKeyboardShortcuts();
@@ -34,6 +34,7 @@ const Unmute = () => {
   );
   const [rawChatHistory, setRawChatHistory] = useState<ChatMessage[]>([]);
   const chatHistory = compressChatHistory(rawChatHistory);
+  const [showCopyNotification, setShowCopyNotification] = useState(false);
 
   const { microphoneAccess, askMicrophoneAccess } = useMicrophoneAccess();
 
@@ -124,6 +125,27 @@ const Unmute = () => {
     chatHistory: rawChatHistory,
   });
 
+  const copyTranscriptToClipboard = async () => {
+    if (chatHistory.length === 0) {
+      return;
+    }
+
+    const transcript = chatHistory
+      .map((message) => {
+        const label = message.role === "user" ? "You" : "Assistant";
+        return `${label}: ${message.content}`;
+      })
+      .join("\n\n");
+
+    try {
+      await navigator.clipboard.writeText(transcript);
+      setShowCopyNotification(true);
+      setTimeout(() => setShowCopyNotification(false), 3000);
+    } catch (error) {
+      console.error("Failed to copy transcript:", error);
+    }
+  };
+
   const onConnectButtonPress = async () => {
     // If we're not connected yet
     if (!shouldConnect) {
@@ -134,6 +156,8 @@ const Unmute = () => {
         setShouldConnect(true);
       }
     } else {
+      // Copy transcript before disconnecting
+      await copyTranscriptToClipboard();
       setShouldConnect(false);
       shutdownAudio();
     }
@@ -265,6 +289,13 @@ const Unmute = () => {
   return (
     <div className="w-full">
       <ErrorMessages errors={errors} setErrors={setErrors} />
+      {/* Copy notification */}
+      {showCopyNotification && (
+        <div className="fixed top-8 left-1/2 transform -translate-x-1/2 bg-green text-black px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2 animate-pulse">
+          <Check size={20} />
+          <span className="font-medium">Transcript copied to clipboard!</span>
+        </div>
+      )}
       {/* The main full-height demo */}
       <div className="relative flex w-full min-h-screen flex-col text-white bg-background items-center">
         {/* z-index on the header to put it in front of the circles */}
