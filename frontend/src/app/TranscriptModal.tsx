@@ -147,7 +147,6 @@ const TranscriptModal = ({
                       "text-base leading-relaxed",
                       message.role === "user" ? "text-blue-100" : "text-white"
                     )}
-                    style={{ whiteSpace: "pre-wrap", wordWrap: "break-word" }}
                   >
                     {message.content}
                   </p>
