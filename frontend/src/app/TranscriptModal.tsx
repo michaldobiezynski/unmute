@@ -1,6 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChatMessage } from "./chatHistory";
-import { X } from "lucide-react";
+import { X, Copy, Check } from "lucide-react";
 import { createPortal } from "react-dom";
 
 interface TranscriptModalProps {
@@ -15,6 +15,7 @@ const TranscriptModal = ({
   onClose,
 }: TranscriptModalProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [isCopied, setIsCopied] = useState(false);
 
   // Format chat history as text
   const formatTranscript = () => {
@@ -28,6 +29,18 @@ const TranscriptModal = ({
         return `${label}: ${message.content}`;
       })
       .join("\n\n");
+  };
+
+  // Copy transcript to clipboard
+  const handleCopyTranscript = async () => {
+    const transcript = formatTranscript();
+    try {
+      await navigator.clipboard.writeText(transcript);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (error) {
+      console.error("Failed to copy transcript:", error);
+    }
   };
 
   // Auto-scroll to bottom when new messages arrive
@@ -67,13 +80,32 @@ const TranscriptModal = ({
           <h2 className="text-xl font-semibold text-white">
             Conversation Transcript
           </h2>
-          <button
-            onClick={onClose}
-            className="text-lightgray hover:text-white transition-colors"
-            aria-label="Close transcript"
-          >
-            <X size={24} />
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleCopyTranscript}
+              className="flex items-center gap-2 text-lightgray hover:text-green transition-colors"
+              aria-label="Copy transcript to clipboard"
+            >
+              {isCopied ? (
+                <>
+                  <Check size={20} />
+                  <span className="text-sm">Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy size={20} />
+                  <span className="text-sm">Copy</span>
+                </>
+              )}
+            </button>
+            <button
+              onClick={onClose}
+              className="text-lightgray hover:text-white transition-colors"
+              aria-label="Close transcript"
+            >
+              <X size={24} />
+            </button>
+          </div>
         </div>
 
         {/* Textarea */}
