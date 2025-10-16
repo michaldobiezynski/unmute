@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ChatMessage } from "./chatHistory";
 import { X, Copy, Check } from "lucide-react";
 import { createPortal } from "react-dom";
+import clsx from "clsx";
 
 interface TranscriptModalProps {
   chatHistory: ChatMessage[];
@@ -14,11 +15,11 @@ const TranscriptModal = ({
   isVisible,
   onClose,
 }: TranscriptModalProps) => {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const [isCopied, setIsCopied] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
 
-  // Format chat history as text
+  // Format chat history as text for copying
   const formatTranscript = () => {
     if (chatHistory.length === 0) {
       return "No conversation yet. Start talking to see the transcript here.";
@@ -48,8 +49,8 @@ const TranscriptModal = ({
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    if (isVisible && textareaRef.current) {
-      textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
+    if (isVisible && contentRef.current) {
+      contentRef.current.scrollTop = contentRef.current.scrollHeight;
     }
   }, [chatHistory, isVisible]);
 
@@ -119,15 +120,41 @@ const TranscriptModal = ({
           </div>
         </div>
 
-        {/* Textarea */}
-        <textarea
-          ref={textareaRef}
-          value={formatTranscript()}
-          readOnly
-          className="flex-1 w-full px-6 py-4 bg-background text-white resize-none focus:outline-none font-mono text-sm leading-relaxed"
-          aria-label="Conversation transcript - readonly"
+        {/* Transcript content */}
+        <div
+          ref={contentRef}
+          className="flex-1 w-full px-4 py-4 bg-background overflow-y-auto"
           style={{ minHeight: "400px" }}
-        />
+        >
+          {chatHistory.length === 0 ? (
+            <p className="text-lightgray text-center italic">
+              No conversation yet. Start talking to see the transcript here.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {chatHistory.map((message, index) => (
+                <div key={`${message.role}-${index}`} className="flex flex-col gap-1">
+                  <span
+                    className={clsx(
+                      "font-semibold text-sm",
+                      message.role === "user" ? "text-blue-400" : "text-green"
+                    )}
+                  >
+                    {message.role === "user" ? "You" : "Assistant"}:
+                  </span>
+                  <p
+                    className={clsx(
+                      "whitespace-pre-wrap break-words text-base leading-relaxed",
+                      message.role === "user" ? "text-blue-100" : "text-white"
+                    )}
+                  >
+                    {message.content}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Footer */}
         <div className="px-6 py-3 border-t border-lightgray text-lightgray text-xs text-right">
