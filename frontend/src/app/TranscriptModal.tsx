@@ -16,6 +16,7 @@ const TranscriptModal = ({
 }: TranscriptModalProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isCopied, setIsCopied] = useState(false);
+  const [showNotification, setShowNotification] = useState(false);
 
   // Format chat history as text
   const formatTranscript = () => {
@@ -37,7 +38,9 @@ const TranscriptModal = ({
     try {
       await navigator.clipboard.writeText(transcript);
       setIsCopied(true);
+      setShowNotification(true);
       setTimeout(() => setIsCopied(false), 2000);
+      setTimeout(() => setShowNotification(false), 3000);
     } catch (error) {
       console.error("Failed to copy transcript:", error);
     }
@@ -71,6 +74,14 @@ const TranscriptModal = ({
       className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
       onClick={onClose}
     >
+      {/* Copy notification */}
+      {showNotification && (
+        <div className="fixed top-8 left-1/2 transform -translate-x-1/2 bg-green text-black px-6 py-3 rounded-lg shadow-lg z-[60] flex items-center gap-2 animate-pulse">
+          <Check size={20} />
+          <span className="font-medium">Transcript copied to clipboard!</span>
+        </div>
+      )}
+      
       <div
         className="bg-darkgray border-2 border-green shadow-lg w-full max-w-3xl max-h-[80vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
