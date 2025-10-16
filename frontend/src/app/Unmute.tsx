@@ -23,9 +23,10 @@ import { useGoogleAnalytics } from "./useGoogleAnalytics";
 import clsx from "clsx";
 import { useBackendServerUrl } from "./useBackendServerUrl";
 import { RECORDING_CONSENT_STORAGE_KEY } from "./ConsentModal";
+import { Subtitles as SubtitlesIcon } from "lucide-react";
 
 const Unmute = () => {
-  const { isDevMode, showSubtitles } = useKeyboardShortcuts();
+  const { isDevMode, showSubtitles, toggleSubtitles } = useKeyboardShortcuts();
   const [debugDict, setDebugDict] = useState<object | null>(null);
   const [unmuteConfig, setUnmuteConfig] = useState<UnmuteConfig>(
     DEFAULT_UNMUTE_CONFIG
@@ -304,6 +305,14 @@ const Unmute = () => {
             extraClasses="w-full max-w-96"
           >
             {"download recording"}
+          </SlantedButton>
+          <SlantedButton
+            onClick={toggleSubtitles}
+            kind="secondary"
+            extraClasses="w-full max-w-96 flex items-center justify-center gap-2"
+          >
+            <SubtitlesIcon size={20} />
+            {showSubtitles ? "hide subtitles" : "show subtitles"}
           </SlantedButton>
           <SlantedButton
             onClick={onConnectButtonPress}

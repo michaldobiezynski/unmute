@@ -9,6 +9,10 @@ const useKeyboardShortcuts = () => {
   // useLocalStorage("showSubtitles", false)
   const [showSubtitles, setShowSubtitles] = useState(true);
 
+  const toggleSubtitles = () => {
+    setShowSubtitles((prev) => !prev);
+  };
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const activeElement = document.activeElement;
@@ -27,7 +31,7 @@ const useKeyboardShortcuts = () => {
         setIsDevMode((prev) => !prev);
       }
       if (!isInputField && (event.key === "S" || event.key === "s")) {
-        setShowSubtitles((prev) => !prev);
+        toggleSubtitles();
       }
     };
 
@@ -35,9 +39,9 @@ const useKeyboardShortcuts = () => {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [setIsDevMode, setShowSubtitles]);
+  }, [setIsDevMode, toggleSubtitles]);
 
-  return { isDevMode, showSubtitles };
+  return { isDevMode, showSubtitles, toggleSubtitles };
 };
 
 export default useKeyboardShortcuts;
