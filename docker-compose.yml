@@ -40,7 +40,7 @@ services:
       - KYUTAI_STT_URL=ws://stt:8080
       - KYUTAI_TTS_URL=ws://tts:8080
       - KYUTAI_LLM_URL=https://api.openai.com
-      - KYUTAI_LLM_MODEL=gpt-4o
+      - KYUTAI_LLM_MODEL=gpt-4-turbo
       - KYUTAI_LLM_API_KEY=$OPEN_AI_API_KEY
       - NEWSAPI_API_KEY=$NEWSAPI_API_KEY
     labels:
