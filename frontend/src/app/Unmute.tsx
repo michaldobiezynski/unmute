@@ -15,6 +15,7 @@ import UnmuteConfigurator, {
 import CouldNotConnect, { HealthStatus } from "./CouldNotConnect";
 import UnmuteHeader from "./UnmuteHeader";
 import Subtitles from "./Subtitles";
+import TranscriptPanel from "./TranscriptPanel";
 import { ChatMessage, compressChatHistory } from "./chatHistory";
 import useWakeLock from "./useWakeLock";
 import ErrorMessages, { ErrorItem, makeErrorItem } from "./ErrorMessages";
@@ -23,10 +24,10 @@ import { useGoogleAnalytics } from "./useGoogleAnalytics";
 import clsx from "clsx";
 import { useBackendServerUrl } from "./useBackendServerUrl";
 import { RECORDING_CONSENT_STORAGE_KEY } from "./ConsentModal";
-import { Subtitles as SubtitlesIcon } from "lucide-react";
+import { Subtitles as SubtitlesIcon, ScrollText } from "lucide-react";
 
 const Unmute = () => {
-  const { isDevMode, showSubtitles, toggleSubtitles } = useKeyboardShortcuts();
+  const { isDevMode, showSubtitles, toggleSubtitles, showTranscript, toggleTranscript } = useKeyboardShortcuts();
   const [debugDict, setDebugDict] = useState<object | null>(null);
   const [unmuteConfig, setUnmuteConfig] = useState<UnmuteConfig>(
     DEFAULT_UNMUTE_CONFIG
@@ -315,6 +316,14 @@ const Unmute = () => {
             {showSubtitles ? "hide subtitles" : "show subtitles"}
           </SlantedButton>
           <SlantedButton
+            onClick={toggleTranscript}
+            kind="secondary"
+            extraClasses="w-full max-w-96 flex items-center justify-center gap-2"
+          >
+            <ScrollText size={20} />
+            {showTranscript ? "hide transcript" : "show transcript"}
+          </SlantedButton>
+          <SlantedButton
             onClick={onConnectButtonPress}
             kind={shouldConnect ? "secondary" : "primary"}
             extraClasses="w-full max-w-96"
@@ -331,6 +340,7 @@ const Unmute = () => {
           )}
         </div>
       </div>
+      <TranscriptPanel chatHistory={chatHistory} isVisible={showTranscript} />
       {/* Debug stuff, not counted into the screen height */}
       {isDevMode && (
         <div>
@@ -342,7 +352,7 @@ const Unmute = () => {
               }}
             ></pre>
           </div>
-          <div>Subtitles: press S. Dev mode: press D.</div>
+          <div>Subtitles: press S. Transcript: press T. Dev mode: press D.</div>
         </div>
       )}
       <canvas ref={recordingCanvasRef} className="hidden" />
