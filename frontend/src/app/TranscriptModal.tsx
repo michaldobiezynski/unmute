@@ -123,7 +123,7 @@ const TranscriptModal = ({
         {/* Transcript content */}
         <div
           ref={contentRef}
-          className="flex-1 w-full px-6 py-4 bg-background overflow-y-auto"
+          className="flex-1 overflow-y-auto bg-background px-6 py-4"
           style={{ minHeight: "400px" }}
         >
           {chatHistory.length === 0 ? (
@@ -131,20 +131,20 @@ const TranscriptModal = ({
               No conversation yet. Start talking to see the transcript here.
             </p>
           ) : (
-            <div className="flex flex-col gap-4 w-full">
+            <div className="space-y-4">
               {chatHistory.map((message, index) => (
-                <div key={`${message.role}-${index}`} className="w-full">
-                  <span
+                <div key={`${message.role}-${index}`}>
+                  <div
                     className={clsx(
-                      "font-semibold text-sm inline-block mb-1",
+                      "font-semibold text-sm mb-1",
                       message.role === "user" ? "text-blue-400" : "text-green"
                     )}
                   >
                     {message.role === "user" ? "You" : "Assistant"}:
-                  </span>
+                  </div>
                   <div
                     className={clsx(
-                      "whitespace-pre-wrap break-words text-base leading-relaxed w-full",
+                      "text-base leading-relaxed whitespace-pre-wrap",
                       message.role === "user" ? "text-blue-100" : "text-white"
                     )}
                   >
