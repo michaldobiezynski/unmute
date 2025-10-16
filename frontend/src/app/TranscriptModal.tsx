@@ -3,17 +3,17 @@ import { ChatMessage } from "./chatHistory";
 import { X } from "lucide-react";
 import { createPortal } from "react-dom";
 
-interface TranscriptPanelProps {
+interface TranscriptModalProps {
   chatHistory: ChatMessage[];
   isVisible: boolean;
   onClose: () => void;
 }
 
-const TranscriptPanel = ({
+const TranscriptModal = ({
   chatHistory,
   isVisible,
   onClose,
-}: TranscriptPanelProps) => {
+}: TranscriptModalProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Format chat history as text
@@ -97,5 +97,5 @@ const TranscriptPanel = ({
   return createPortal(modalContent, document.body);
 };
 
-export default TranscriptPanel;
+export default TranscriptModal;
 

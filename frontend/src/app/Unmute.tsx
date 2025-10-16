@@ -15,7 +15,7 @@ import UnmuteConfigurator, {
 import CouldNotConnect, { HealthStatus } from "./CouldNotConnect";
 import UnmuteHeader from "./UnmuteHeader";
 import Subtitles from "./Subtitles";
-import TranscriptPanel from "./TranscriptPanel";
+import TranscriptModal from "./TranscriptModal";
 import { ChatMessage, compressChatHistory } from "./chatHistory";
 import useWakeLock from "./useWakeLock";
 import ErrorMessages, { ErrorItem, makeErrorItem } from "./ErrorMessages";
@@ -340,7 +340,7 @@ const Unmute = () => {
           )}
         </div>
       </div>
-      <TranscriptPanel
+      <TranscriptModal
         chatHistory={chatHistory}
         isVisible={showTranscript}
         onClose={toggleTranscript}
