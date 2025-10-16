@@ -123,8 +123,8 @@ const TranscriptModal = ({
         {/* Transcript content */}
         <div
           ref={contentRef}
-          className="flex-1 overflow-y-auto bg-background px-6 py-4"
-          style={{ minHeight: "400px" }}
+          className="overflow-y-auto bg-background px-6 py-4"
+          style={{ maxHeight: "calc(80vh - 180px)" }}
         >
           {chatHistory.length === 0 ? (
             <p className="text-lightgray text-center italic">
@@ -142,14 +142,15 @@ const TranscriptModal = ({
                   >
                     {message.role === "user" ? "You" : "Assistant"}:
                   </div>
-                  <div
+                  <p
                     className={clsx(
-                      "text-base leading-relaxed whitespace-pre-wrap",
+                      "text-base leading-relaxed",
                       message.role === "user" ? "text-blue-100" : "text-white"
                     )}
+                    style={{ whiteSpace: "pre-wrap", wordWrap: "break-word" }}
                   >
                     {message.content}
-                  </div>
+                  </p>
                 </div>
               ))}
             </div>
