@@ -7,7 +7,7 @@ const useKeyboardShortcuts = () => {
   // useLocalStorage("useDevMode", false)
   const [isDevMode, setIsDevMode] = useState(false);
   // useLocalStorage("showSubtitles", false)
-  const [showSubtitles, setShowSubtitles] = useState(false);
+  const [showSubtitles, setShowSubtitles] = useState(true);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
