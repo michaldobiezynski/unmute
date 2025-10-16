@@ -340,7 +340,11 @@ const Unmute = () => {
           )}
         </div>
       </div>
-      <TranscriptPanel chatHistory={chatHistory} isVisible={showTranscript} />
+      <TranscriptPanel
+        chatHistory={chatHistory}
+        isVisible={showTranscript}
+        onClose={toggleTranscript}
+      />
       {/* Debug stuff, not counted into the screen height */}
       {isDevMode && (
         <div>
