@@ -68,6 +68,7 @@ class SessionConfig(BaseModel):
     instructions: Instructions | None = None
     voice: str | None = None
     allow_recording: bool
+    text_only_mode: bool = False
 
 
 class SessionUpdate(BaseEvent[Literal["session.update"]]):

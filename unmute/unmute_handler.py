@@ -97,6 +97,7 @@ class UnmuteHandler(AsyncStreamHandler):
 
         self.tts_voice: str | None = None  # Stored separately because TTS is restarted
         self.tts_output_stopwatch = Stopwatch()
+        self.text_only_mode: bool = False  # If True, skip TTS and only send text
 
         self.chatbot = Chatbot()
         self.openai_client = get_openai_client()
@@ -196,7 +197,8 @@ class UnmuteHandler(AsyncStreamHandler):
 
         llm_stopwatch = Stopwatch()
 
-        quest = await self.start_up_tts(generating_message_i)
+        # Only start TTS if not in text-only mode
+        quest = None if self.text_only_mode else await self.start_up_tts(generating_message_i)
         llm = VLLMStream(
             # if generating_message_i is 2, then we have a system prompt + an empty
             # assistant message signalling that we are generating a response.
@@ -236,18 +238,28 @@ class UnmuteHandler(AsyncStreamHandler):
                     mt.VLLM_TTFT.observe(time_to_first_token)
                     logger.info("Sending first word to TTS: %s", delta)
 
-                self.tts_output_stopwatch.start_if_not_started()
-                try:
-                    tts = await quest.get()
-                except Exception:
-                    error_from_tts = True
-                    raise
+                # In text-only mode, send text deltas directly
+                if self.text_only_mode:
+                    await self.output_queue.put(ora.ResponseTextDelta(delta=delta))
+                    await self.add_chat_message_delta(
+                        delta,
+                        "assistant",
+                        generating_message_i=generating_message_i,
+                    )
+                else:
+                    assert quest is not None, "quest should not be None when not in text-only mode"
+                    self.tts_output_stopwatch.start_if_not_started()
+                    try:
+                        tts = await quest.get()
+                    except Exception:
+                        error_from_tts = True
+                        raise
 
-                if len(self.chatbot.chat_history) > generating_message_i:
-                    break  # We've been interrupted
+                    if len(self.chatbot.chat_history) > generating_message_i:
+                        break  # We've been interrupted
 
-                assert isinstance(delta, str)  # make Pyright happy
-                await tts.send(delta)
+                    assert isinstance(delta, str)  # make Pyright happy
+                    await tts.send(delta)
 
             await self.output_queue.put(
                 # The words include the whitespace, so no need to add it here
@@ -257,6 +269,12 @@ class UnmuteHandler(AsyncStreamHandler):
             if tts is not None:
                 logger.info("Sending TTS EOS.")
                 await tts.send(TTSClientEosMessage())
+            
+            # In text-only mode, signal the end of response differently
+            if self.text_only_mode:
+                await self.output_queue.put(ora.ResponseAudioDone())
+                await self.add_chat_message_delta("", "user")
+                self.waiting_for_user_start_time = self.audio_received_sec()
         except asyncio.CancelledError:
             mt.VLLM_INTERRUPTS.inc()
             raise
@@ -643,6 +661,11 @@ class UnmuteHandler(AsyncStreamHandler):
 
         if session.voice:
             self.tts_voice = session.voice
+
+        # Update text-only mode
+        self.text_only_mode = session.text_only_mode
+        if self.text_only_mode:
+            logger.info("Text-only mode enabled, TTS will be skipped")
 
         if not session.allow_recording and self.recorder:
             await self.recorder.add_event("client", ora.SessionUpdate(session=session))
