@@ -24,10 +24,22 @@ import { useGoogleAnalytics } from "./useGoogleAnalytics";
 import clsx from "clsx";
 import { useBackendServerUrl } from "./useBackendServerUrl";
 import { RECORDING_CONSENT_STORAGE_KEY } from "./ConsentModal";
-import { Subtitles as SubtitlesIcon, ScrollText, Check } from "lucide-react";
+import {
+  Subtitles as SubtitlesIcon,
+  ScrollText,
+  Check,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
 
 const Unmute = () => {
-  const { isDevMode, showSubtitles, toggleSubtitles, showTranscript, toggleTranscript } = useKeyboardShortcuts();
+  const {
+    isDevMode,
+    showSubtitles,
+    toggleSubtitles,
+    showTranscript,
+    toggleTranscript,
+  } = useKeyboardShortcuts();
   const [debugDict, setDebugDict] = useState<object | null>(null);
   const [unmuteConfig, setUnmuteConfig] = useState<UnmuteConfig>(
     DEFAULT_UNMUTE_CONFIG
@@ -262,6 +274,7 @@ const Unmute = () => {
           instructions: unmuteConfig.instructions,
           voice: unmuteConfig.voice,
           allow_recording: recordingConsent,
+          text_only_mode: unmuteConfig.textOnlyMode,
         },
       })
     );
@@ -307,8 +320,7 @@ const Unmute = () => {
             "w-full h-auto min-h-75",
             "flex flex-row-reverse md:flex-row items-center justify-center grow",
             "-mt-10 md:mt-0 mb-10 md:mb-0 md:-mr-4"
-          )}
-        >
+          )}>
           <PositionedAudioVisualizer
             chatHistory={chatHistory}
             role={"assistant"}
@@ -334,31 +346,43 @@ const Unmute = () => {
           <SlantedButton
             onClick={onDownloadRecordingButtonPress}
             kind={recordingAvailable ? "secondary" : "disabled"}
-            extraClasses="w-full max-w-96"
-          >
+            extraClasses="w-full max-w-96">
             {"download recording"}
           </SlantedButton>
           <SlantedButton
             onClick={toggleSubtitles}
             kind="secondary"
-            extraClasses="w-full max-w-96 flex items-center justify-center gap-2"
-          >
+            extraClasses="w-full max-w-96 flex items-center justify-center gap-2">
             <SubtitlesIcon size={20} />
             {showSubtitles ? "hide subtitles" : "show subtitles"}
           </SlantedButton>
           <SlantedButton
             onClick={toggleTranscript}
             kind="secondary"
-            extraClasses="w-full max-w-96 flex items-center justify-center gap-2"
-          >
+            extraClasses="w-full max-w-96 flex items-center justify-center gap-2">
             <ScrollText size={20} />
             {showTranscript ? "hide transcript" : "show transcript"}
           </SlantedButton>
           <SlantedButton
+            onClick={() => {
+              setUnmuteConfig({
+                ...unmuteConfig,
+                textOnlyMode: !unmuteConfig.textOnlyMode,
+              });
+            }}
+            kind="secondary"
+            extraClasses="w-full max-w-96 flex items-center justify-center gap-2">
+            {unmuteConfig.textOnlyMode ? (
+              <VolumeX size={20} />
+            ) : (
+              <Volume2 size={20} />
+            )}
+            {unmuteConfig.textOnlyMode ? "enable audio" : "text only"}
+          </SlantedButton>
+          <SlantedButton
             onClick={onConnectButtonPress}
             kind={shouldConnect ? "secondary" : "primary"}
-            extraClasses="w-full max-w-96"
-          >
+            extraClasses="w-full max-w-96">
             {shouldConnect ? "disconnect" : "connect"}
           </SlantedButton>
           {/* Maybe we don't need to explicitly show the status */}
@@ -384,8 +408,7 @@ const Unmute = () => {
               className="whitespace-pre-wrap break-words"
               dangerouslySetInnerHTML={{
                 __html: prettyPrintJson.toHtml(debugDict),
-              }}
-            ></pre>
+              }}></pre>
           </div>
           <div>Subtitles: press S. Transcript: press T. Dev mode: press D.</div>
         </div>
