@@ -86,7 +86,7 @@ const instructionsToPlaceholder = (instructions: Instructions) => {
         quiz_show:
           "You're a quiz show host that hates his job. (For this character, the instructions contain dynamically generated parts.)",
         trivia_quiz:
-          "Answer with only essential words. Maximum 2 words. No explanation. No punctuation unless required for the answer.",
+          "Answer with only essential words. Maximum 4 words. No explanation. No punctuation unless required for the answer.",
         news: "Talk about the latest tech news. (For this character, we fetch the news from the internet dynamically.)",
         unmute_explanation:
           "Explain how Unmute works. (For this character, the instructions are long so we don't show them here in full.)",
@@ -152,21 +152,32 @@ const UnmuteConfigurator = ({
         const voicesData = await fetchVoices(backendServerUrl);
         setVoices(voicesData);
 
-        // It could be confusing to start with a non-English voice
-        const englishVoices = voicesData.filter(
-          (voice) => (voice.instructions?.language || "en") === "en"
+        // Check if the saved voice from localStorage exists in the fetched voices
+        const savedVoiceExists = voicesData.some(
+          (voice) => voice.source.path_on_server === config.voice
         );
-        const randomVoice =
-          englishVoices[Math.floor(Math.random() * englishVoices.length)];
 
-        setConfig({
-          ...config,
-          voice: randomVoice.source.path_on_server,
-          voiceName: getVoiceName(randomVoice),
-          instructions:
-            randomVoice.instructions || DEFAULT_UNMUTE_CONFIG.instructions,
-          textOnlyMode: config.textOnlyMode,
-        });
+        // Only set a random voice if no valid saved voice exists
+        if (!savedVoiceExists) {
+          // It could be confusing to start with a non-English voice
+          const englishVoices = voicesData.filter((voice) => {
+            const instructions = voice.instructions;
+            if (!instructions) return true; // Include voices without instructions
+            if (instructions.type === "unmute_explanation") return true;
+            return (instructions.language || "en") === "en";
+          });
+          const randomVoice =
+            englishVoices[Math.floor(Math.random() * englishVoices.length)];
+
+          setConfig({
+            ...config,
+            voice: randomVoice.source.path_on_server,
+            voiceName: getVoiceName(randomVoice),
+            instructions:
+              randomVoice.instructions || DEFAULT_UNMUTE_CONFIG.instructions,
+            textOnlyMode: config.textOnlyMode,
+          });
+        }
       }
     };
 
