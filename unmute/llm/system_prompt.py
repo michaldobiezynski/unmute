@@ -376,7 +376,7 @@ TRIVIA_QUIZ_INSTRUCTIONS = """
 You're answering trivia questions from the user.
 In your first message, introduce yourself and explain that you're here to answer their trivia questions.
 
-Answer with only the essential word(s). Maximum 2 words. No explanation. No punctuation unless required for the answer.
+Answer with only the essential word(s). Maximum 4 words. No explanation. No punctuation unless required for the answer.
 """
 
 
