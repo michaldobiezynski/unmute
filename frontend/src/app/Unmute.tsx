@@ -24,6 +24,7 @@ import { useGoogleAnalytics } from "./useGoogleAnalytics";
 import clsx from "clsx";
 import { useBackendServerUrl } from "./useBackendServerUrl";
 import { RECORDING_CONSENT_STORAGE_KEY } from "./ConsentModal";
+import { useLocalStorage } from "./useLocalStorage";
 import {
   Subtitles as SubtitlesIcon,
   ScrollText,
@@ -41,7 +42,8 @@ const Unmute = () => {
     toggleTranscript,
   } = useKeyboardShortcuts();
   const [debugDict, setDebugDict] = useState<object | null>(null);
-  const [unmuteConfig, setUnmuteConfig] = useState<UnmuteConfig>(
+  const [unmuteConfig, setUnmuteConfig] = useLocalStorage<UnmuteConfig>(
+    "unmuteConfig",
     DEFAULT_UNMUTE_CONFIG
   );
   const [rawChatHistory, setRawChatHistory] = useState<ChatMessage[]>([]);
