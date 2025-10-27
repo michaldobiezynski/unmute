@@ -383,6 +383,12 @@ Answer with only the essential word(s). Maximum 2 words. No explanation. No punc
 class TriviaQuizInstructions(BaseModel):
     type: Literal["trivia_quiz"] = "trivia_quiz"
     language: LanguageCode | None = None
+    
+    # LLM generation parameters for concise responses
+    max_tokens: int = 10
+    temperature: float = 0.0
+    top_p: float = 0.1
+    stop: list[str] = ["\n", ".", "!", "?"]
 
     def make_system_prompt(self) -> str:
         return _SYSTEM_PROMPT_TEMPLATE.format(

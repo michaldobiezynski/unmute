@@ -146,6 +146,9 @@ class VLLMStream:
         self,
         client: AsyncOpenAI,
         temperature: float = 1.0,
+        max_tokens: int | None = None,
+        top_p: float | None = None,
+        stop: list[str] | None = None,
     ):
         """
         If `model` is None, it will look at the available models, and if there is only
@@ -154,16 +157,29 @@ class VLLMStream:
         self.client = client
         self.model = autoselect_model()
         self.temperature = temperature
+        self.max_tokens = max_tokens
+        self.top_p = top_p
+        self.stop = stop
 
     async def chat_completion(
         self, messages: list[dict[str, str]]
     ) -> AsyncIterator[str]:
-        stream = await self.client.chat.completions.create(
-            model=self.model,
-            messages=cast(Any, messages),  # Cast and hope for the best
-            stream=True,
-            temperature=self.temperature,
-        )
+        # Build kwargs dynamically to only include non-None parameters
+        kwargs: dict[str, Any] = {
+            "model": self.model,
+            "messages": cast(Any, messages),
+            "stream": True,
+            "temperature": self.temperature,
+        }
+        
+        if self.max_tokens is not None:
+            kwargs["max_tokens"] = self.max_tokens
+        if self.top_p is not None:
+            kwargs["top_p"] = self.top_p
+        if self.stop is not None:
+            kwargs["stop"] = self.stop
+        
+        stream = await self.client.chat.completions.create(**kwargs)
 
         async with stream:
             async for chunk in stream:

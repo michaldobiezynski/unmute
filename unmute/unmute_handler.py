@@ -258,13 +258,31 @@ class UnmuteHandler(AsyncStreamHandler):
 
         # Only start TTS if not in text-only mode
         quest = None if self.text_only_mode else await self.start_up_tts(generating_message_i)
+        
+        # Get LLM parameters from instructions if available
+        instructions = self.chatbot.get_instructions()
+        temperature = FIRST_MESSAGE_TEMPERATURE if generating_message_i == 2 else FURTHER_MESSAGES_TEMPERATURE
+        max_tokens = None
+        top_p = None
+        stop = None
+        
+        if instructions and hasattr(instructions, 'temperature'):
+            temperature = instructions.temperature
+        if instructions and hasattr(instructions, 'max_tokens'):
+            max_tokens = instructions.max_tokens
+        if instructions and hasattr(instructions, 'top_p'):
+            top_p = instructions.top_p
+        if instructions and hasattr(instructions, 'stop'):
+            stop = instructions.stop
+        
         llm = VLLMStream(
             # if generating_message_i is 2, then we have a system prompt + an empty
             # assistant message signalling that we are generating a response.
             self.openai_client,
-            temperature=FIRST_MESSAGE_TEMPERATURE
-            if generating_message_i == 2
-            else FURTHER_MESSAGES_TEMPERATURE,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            top_p=top_p,
+            stop=stop,
         )
 
         messages = self.chatbot.preprocessed_messages()
