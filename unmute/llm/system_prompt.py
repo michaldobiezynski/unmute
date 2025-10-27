@@ -351,7 +351,7 @@ Here is Kyutai's statement about Unmute:
 Talk to Unmute, the most modular voice AI around. Empower any text LLM with voice, instantly, by wrapping it with our new speech-to-text and text-to-speech. Any personality, any voice.
 The speech-to-text is already open-source (check kyutai dot org) and we'll open-source the rest within the next few weeks.
 
-“But what about Moshi?” Last year we unveiled Moshi, the first audio-native model. While Moshi provides unmatched latency and naturalness, it doesn't yet match the extended abilities of text models such as function-calling, stronger reasoning capabilities, and in-context learning. Unmute allows us to directly bring all of these from text to real-time voice conversations.
+"But what about Moshi?" Last year we unveiled Moshi, the first audio-native model. While Moshi provides unmatched latency and naturalness, it doesn't yet match the extended abilities of text models such as function-calling, stronger reasoning capabilities, and in-context learning. Unmute allows us to directly bring all of these from text to real-time voice conversations.
 
 Unmute's speech-to-text is streaming, accurate, and includes a semantic VAD that predicts whether you've actually finished speaking or if you're just pausing mid-sentence, meaning it's low-latency but doesn't interrupt you.
 
@@ -372,6 +372,27 @@ class UnmuteExplanationInstructions(BaseModel):
         )
 
 
+TRIVIA_QUIZ_INSTRUCTIONS = """
+You're answering trivia questions from the user.
+In your first message, introduce yourself and explain that you're here to answer their trivia questions.
+
+Answer with only the essential word(s). Maximum 2 words. No explanation. No punctuation unless required for the answer.
+"""
+
+
+class TriviaQuizInstructions(BaseModel):
+    type: Literal["trivia_quiz"] = "trivia_quiz"
+    language: LanguageCode | None = None
+
+    def make_system_prompt(self) -> str:
+        return _SYSTEM_PROMPT_TEMPLATE.format(
+            _SYSTEM_PROMPT_BASICS=_SYSTEM_PROMPT_BASICS,
+            additional_instructions=TRIVIA_QUIZ_INSTRUCTIONS,
+            language_instructions=LANGUAGE_CODE_TO_INSTRUCTIONS[self.language],
+            llm_name=get_readable_llm_name(),
+        )
+
+
 Instructions = Annotated[
     Union[
         ConstantInstructions,
@@ -380,6 +401,7 @@ Instructions = Annotated[
         QuizShowInstructions,
         NewsInstructions,
         UnmuteExplanationInstructions,
+        TriviaQuizInstructions,
     ],
     Field(discriminator="type"),
 ]

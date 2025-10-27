@@ -18,7 +18,8 @@ export type Instructions =
   | ConstantInstructions
   | { type: "smalltalk"; language?: LanguageCode }
   | { type: "guess_animal"; language?: LanguageCode }
-  | { type: "quiz_show"; language?: LanguageCode };
+  | { type: "quiz_show"; language?: LanguageCode }
+  | { type: "trivia_quiz"; language?: LanguageCode };
 
 export type UnmuteConfig = {
   instructions: Instructions;
@@ -82,6 +83,8 @@ const instructionsToPlaceholder = (instructions: Instructions) => {
           "Make the user guess the animal. (For this character, the instructions contain dynamically generated parts.)",
         quiz_show:
           "You're a quiz show host that hates his job. (For this character, the instructions contain dynamically generated parts.)",
+        trivia_quiz:
+          "Answer with only essential words. Maximum 2 words. No explanation. No punctuation unless required for the answer.",
         news: "Talk about the latest tech news. (For this character, we fetch the news from the internet dynamically.)",
         unmute_explanation:
           "Explain how Unmute works. (For this character, the instructions are long so we don't show them here in full.)",
