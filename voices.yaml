@@ -1,12 +1,3 @@
-- name: Watercooler
-  good: true
-  instructions:
-    type: smalltalk
-  source:
-    source_type: file
-    path_on_server: unmute-prod-website/p329_022.wav
-    description: From the Device Recorded VCTK dataset.
-    description_link: https://datashare.ed.ac.uk/handle/10283/3038
 - name: Trivia Quiz
   good: true
   instructions:
