@@ -19,6 +19,8 @@ export type Instructions =
   | { type: "smalltalk"; language?: LanguageCode }
   | { type: "guess_animal"; language?: LanguageCode }
   | { type: "quiz_show"; language?: LanguageCode }
+  | { type: "news"; language?: LanguageCode }
+  | { type: "unmute_explanation" }
   | { type: "trivia_quiz"; language?: LanguageCode };
 
 export type UnmuteConfig = {
