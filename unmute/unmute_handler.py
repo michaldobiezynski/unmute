@@ -1,5 +1,6 @@
 import asyncio
 import math
+from difflib import SequenceMatcher
 from functools import partial
 from logging import getLogger
 from pathlib import Path
@@ -64,7 +65,63 @@ FURTHER_MESSAGES_TEMPERATURE = 0.3
 # A word from the ASR can still interrupt the bot.
 UNINTERRUPTIBLE_BY_VAD_TIME_SEC = 3
 
+# Minimum similarity threshold for considering text as "reading back" the assistant's response
+# Range: 0.0 (completely different) to 1.0 (identical)
+TEXT_SIMILARITY_THRESHOLD = 0.75
+
 logger = getLogger(__name__)
+
+
+def normalize_text_for_comparison(text: str) -> str:
+    """Normalize text for similarity comparison by removing punctuation and converting to lowercase."""
+    import re
+    # Remove punctuation and extra whitespace, convert to lowercase
+    text = re.sub(r'[^\w\s]', '', text.lower())
+    # Collapse multiple spaces into one
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
+
+
+def compute_text_similarity(text1: str, text2: str) -> float:
+    """Compute similarity ratio between two texts using SequenceMatcher.
+    
+    Returns a value between 0.0 and 1.0, where 1.0 means identical texts.
+    """
+    normalized1 = normalize_text_for_comparison(text1)
+    normalized2 = normalize_text_for_comparison(text2)
+    
+    if not normalized1 or not normalized2:
+        return 0.0
+    
+    return SequenceMatcher(None, normalized1, normalized2).ratio()
+
+
+def is_text_reading_back_response(user_text: str, last_assistant_text: str) -> bool:
+    """Check if the user is reading back the assistant's last response.
+    
+    Returns True if user_text is similar enough to last_assistant_text.
+    """
+    if not last_assistant_text or not user_text:
+        return False
+    
+    # Check both full match and substring match (user might read part of the response)
+    similarity = compute_text_similarity(user_text, last_assistant_text)
+    
+    # Also check if user text is reading a substring of the assistant's response
+    # This handles cases where user reads the beginning of a long response
+    words_user = normalize_text_for_comparison(user_text).split()
+    words_assistant = normalize_text_for_comparison(last_assistant_text).split()
+    
+    if len(words_user) >= 3 and len(words_assistant) >= len(words_user):
+        # Check if user text matches the beginning of assistant text
+        start_similarity = compute_text_similarity(
+            " ".join(words_user),
+            " ".join(words_assistant[:len(words_user)])
+        )
+        if start_similarity > TEXT_SIMILARITY_THRESHOLD:
+            return True
+    
+    return similarity > TEXT_SIMILARITY_THRESHOLD
 
 HandlerOutput = (
     tuple[int, np.ndarray] | AdditionalOutputs | ora.ServerEvent | CloseStream
@@ -94,6 +151,7 @@ class UnmuteHandler(AsyncStreamHandler):
         self.stt_last_message_time: float = 0
         self.stt_end_of_flush_time: float | None = None
         self.stt_flush_timer = Stopwatch()
+        self.current_user_message_from_stt: str = ""  # Track the current user message being built
 
         self.tts_voice: str | None = None  # Stored separately because TTS is restarted
         self.tts_output_stopwatch = Stopwatch()
@@ -101,6 +159,7 @@ class UnmuteHandler(AsyncStreamHandler):
 
         self.chatbot = Chatbot()
         self.openai_client = get_openai_client()
+        self.last_complete_assistant_message: str = ""  # Track last assistant response for echo detection
 
         self.turn_transition_lock = asyncio.Lock()
 
@@ -261,9 +320,13 @@ class UnmuteHandler(AsyncStreamHandler):
                     assert isinstance(delta, str)  # make Pyright happy
                     await tts.send(delta)
 
+            # Store the complete assistant response for echo detection
+            complete_response = "".join(response_words)
+            self.last_complete_assistant_message = complete_response
+            
             await self.output_queue.put(
                 # The words include the whitespace, so no need to add it here
-                ora.ResponseTextDone(text="".join(response_words))
+                ora.ResponseTextDone(text=complete_response)
             )
 
             if tts is not None:
@@ -469,11 +532,35 @@ class UnmuteHandler(AsyncStreamHandler):
                 # don't want to add that because it can trigger a pause even
                 # if the user hasn't started speaking yet.
                 if data.text == "":
+                    # Reset the current user message when STT sends empty string
+                    self.current_user_message_from_stt = ""
+                    continue
+
+                # Build up the current user message
+                if data.text:
+                    # Add spacing if needed
+                    if self.current_user_message_from_stt and not self.current_user_message_from_stt[-1].isspace():
+                        self.current_user_message_from_stt += " "
+                    self.current_user_message_from_stt += data.text
+
+                # Check if user is reading back the assistant's response
+                if is_text_reading_back_response(
+                    self.current_user_message_from_stt,
+                    self.last_complete_assistant_message
+                ):
+                    logger.info(
+                        "Detected user reading back assistant response. "
+                        f"User text: '{self.current_user_message_from_stt[:100]}...' "
+                        f"Assistant text: '{self.last_complete_assistant_message[:100]}...'"
+                    )
+                    # Skip processing this speech - don't interrupt, don't add to chat
                     continue
 
                 if self.chatbot.conversation_state() == "bot_speaking":
                     logger.info("STT-based interruption")
                     await self.interrupt_bot()
+                    # Reset current user message on interruption
+                    self.current_user_message_from_stt = ""
 
                 self.stt_last_message_time = data.start_time
                 is_new_message = await self.add_chat_message_delta(data.text, "user")
@@ -482,6 +569,8 @@ class UnmuteHandler(AsyncStreamHandler):
                     # time to react.
                     stt.pause_prediction.value = 0.0
                     await self.output_queue.put(ora.InputAudioBufferSpeechStarted())
+                    # Reset the accumulated message on new message
+                    self.current_user_message_from_stt = ""
         except websockets.ConnectionClosed:
             logger.info("STT connection closed while receiving messages.")
 
@@ -666,6 +755,10 @@ class UnmuteHandler(AsyncStreamHandler):
         self.text_only_mode = session.text_only_mode
         if self.text_only_mode:
             logger.info("Text-only mode enabled, TTS will be skipped")
+
+        # Reset echo detection tracking when session is updated
+        self.last_complete_assistant_message = ""
+        self.current_user_message_from_stt = ""
 
         if not session.allow_recording and self.recorder:
             await self.recorder.add_event("client", ora.SessionUpdate(session=session))
