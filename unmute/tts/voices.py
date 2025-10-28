@@ -163,6 +163,16 @@ class FileVoiceSource(BaseModel):
     description_link: str | None = None
 
 
+class TimingConfig(BaseModel):
+    """Optional timing configuration for voice-specific behavior."""
+
+    user_silence_timeout: float | None = None
+    pause_threshold: float | None = None
+    interruption_threshold: float | None = None
+    attack_time: float | None = None
+    release_time: float | None = None
+
+
 class VoiceSample(BaseModel):
     model_config = {"extra": "forbid"}
 
@@ -170,6 +180,7 @@ class VoiceSample(BaseModel):
     comment: str | None = None
     good: bool | None = None
     instructions: Instructions | None = None
+    timing: TimingConfig | None = None
     source: FreesoundVoiceSource | FileVoiceSource = Field(discriminator="source_type")
 
 
