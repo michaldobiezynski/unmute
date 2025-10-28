@@ -46,6 +46,7 @@ from unmute.tts.text_to_speech import (
     TTSClientEosMessage,
     TTSTextMessage,
 )
+from unmute.tts.voices import TimingConfig, VoiceList
 
 # TTS_DEBUGGING_TEXT: str | None = "What's 'Hello world'?"
 # TTS_DEBUGGING_TEXT: str | None = "What's the difference between a bagel and a donut?"
@@ -55,7 +56,11 @@ TTS_DEBUGGING_TEXT = None
 AUDIO_INPUT_OVERRIDE: Path | None = None
 DEBUG_PLOT_HISTORY_SEC = 10.0
 
-USER_SILENCE_TIMEOUT = 7.0
+# Default timing configurations (can be overridden per-character in voices.yaml)
+DEFAULT_USER_SILENCE_TIMEOUT = 7.0
+DEFAULT_PAUSE_THRESHOLD = 0.6
+DEFAULT_INTERRUPTION_THRESHOLD = 0.4
+
 FIRST_MESSAGE_TEMPERATURE = 0.7
 FURTHER_MESSAGES_TEMPERATURE = 0.3
 # For this much time, the VAD does not interrupt the bot. This is needed because at
@@ -156,6 +161,7 @@ class UnmuteHandler(AsyncStreamHandler):
         self.tts_voice: str | None = None  # Stored separately because TTS is restarted
         self.tts_output_stopwatch = Stopwatch()
         self.text_only_mode: bool = False  # If True, skip TTS and only send text
+        self.timing_config: TimingConfig = TimingConfig()  # Voice-specific timing config
 
         self.chatbot = Chatbot()
         self.openai_client = get_openai_client()
@@ -204,6 +210,23 @@ class UnmuteHandler(AsyncStreamHandler):
         self.debug_dict["stt_pause_prediction"] = (
             self.stt.pause_prediction.value if self.stt else -1
         )
+        self.debug_dict["timing_config"] = {
+            "user_silence_timeout": (
+                self.timing_config.user_silence_timeout
+                if self.timing_config.user_silence_timeout is not None
+                else DEFAULT_USER_SILENCE_TIMEOUT
+            ),
+            "pause_threshold": (
+                self.timing_config.pause_threshold
+                if self.timing_config.pause_threshold is not None
+                else DEFAULT_PAUSE_THRESHOLD
+            ),
+            "interruption_threshold": (
+                self.timing_config.interruption_threshold
+                if self.timing_config.interruption_threshold is not None
+                else DEFAULT_INTERRUPTION_THRESHOLD
+            ),
+        }
 
         # This gets verbose
         # cutoff_time = self.audio_received_sec() - DEBUG_PLOT_HISTORY_SEC
@@ -450,7 +473,12 @@ class UnmuteHandler(AsyncStreamHandler):
                     await stt.send_audio(zero)
             elif (
                 self.chatbot.conversation_state() == "bot_speaking"
-                and stt.pause_prediction.value < 0.4
+                and stt.pause_prediction.value
+                < (
+                    self.timing_config.interruption_threshold
+                    if self.timing_config.interruption_threshold is not None
+                    else DEFAULT_INTERRUPTION_THRESHOLD
+                )
                 and self.audio_received_sec() > UNINTERRUPTIBLE_BY_VAD_TIME_SEC
             ):
                 logger.info("Interruption by STT-VAD")
@@ -483,7 +511,14 @@ class UnmuteHandler(AsyncStreamHandler):
         ) - self.stt_last_message_time
         self.debug_dict["time_since_last_message"] = time_since_last_message
 
-        if stt.pause_prediction.value > 0.6:
+        # Use voice-specific threshold or default
+        pause_threshold = (
+            self.timing_config.pause_threshold
+            if self.timing_config.pause_threshold is not None
+            else DEFAULT_PAUSE_THRESHOLD
+        )
+
+        if stt.pause_prediction.value > pause_threshold:
             self.debug_dict["timing"]["pause_detection"] = time_since_last_message
             return True
         else:
@@ -507,6 +542,24 @@ class UnmuteHandler(AsyncStreamHandler):
 
     def copy(self):
         return UnmuteHandler()
+
+    def load_timing_config_for_voice(self, voice_path: str) -> TimingConfig:
+        """Load timing configuration for the specified voice from voices.yaml."""
+        try:
+            voice_list = VoiceList()
+            for voice in voice_list.voices:
+                if voice.source.path_on_server == voice_path:
+                    if voice.timing:
+                        logger.info(
+                            f"Loaded custom timing config for voice: {voice.name or voice_path}"
+                        )
+                        return voice.timing
+                    break
+            logger.info(f"Using default timing config for voice: {voice_path}")
+            return TimingConfig()
+        except Exception as e:
+            logger.warning(f"Error loading timing config: {e}, using defaults")
+            return TimingConfig()
 
     async def __aenter__(self) -> None:
         await self.quest_manager.__aenter__()
@@ -750,10 +803,17 @@ class UnmuteHandler(AsyncStreamHandler):
 
     async def detect_long_silence(self):
         """Handle situations where the user doesn't answer for a while."""
+        # Use voice-specific timeout or default
+        silence_timeout = (
+            self.timing_config.user_silence_timeout
+            if self.timing_config.user_silence_timeout is not None
+            else DEFAULT_USER_SILENCE_TIMEOUT
+        )
+
         if (
             self.chatbot.conversation_state() == "waiting_for_user"
             and (self.audio_received_sec() - self.waiting_for_user_start_time)
-            > USER_SILENCE_TIMEOUT
+            > silence_timeout
         ):
             # This will trigger pause detection because it changes the conversation
             # state to "user_speaking".
@@ -768,6 +828,35 @@ class UnmuteHandler(AsyncStreamHandler):
 
         if session.voice:
             self.tts_voice = session.voice
+            # Load timing configuration for the new voice
+            self.timing_config = self.load_timing_config_for_voice(session.voice)
+
+            # If STT has custom timing settings, update the pause prediction EMA
+            if self.stt and (
+                self.timing_config.attack_time is not None
+                or self.timing_config.release_time is not None
+            ):
+                from unmute.stt.exponential_moving_average import ExponentialMovingAverage
+
+                attack_time = (
+                    self.timing_config.attack_time
+                    if self.timing_config.attack_time is not None
+                    else 0.01
+                )
+                release_time = (
+                    self.timing_config.release_time
+                    if self.timing_config.release_time is not None
+                    else 0.01
+                )
+                current_value = self.stt.pause_prediction.value
+                self.stt.pause_prediction = ExponentialMovingAverage(
+                    attack_time=attack_time,
+                    release_time=release_time,
+                    initial_value=current_value,
+                )
+                logger.info(
+                    f"Updated STT timing: attack={attack_time}, release={release_time}"
+                )
 
         # Update text-only mode
         self.text_only_mode = session.text_only_mode
