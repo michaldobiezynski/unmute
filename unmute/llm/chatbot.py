@@ -81,12 +81,16 @@ class Chatbot:
             assert len(self.chat_history) >= 1
             assert self.chat_history[0]["role"] == "system"
 
-            messages = [
-                self.chat_history[0],
-                # Some models, like Gemma, don't like it when there is no user message
-                # so we add one.
-                {"role": "user", "content": "Hello!"},
-            ]
+            # For trivia quiz mode, don't add a greeting - wait for the user's question
+            if self._instructions and self._instructions.type == "trivia_quiz":
+                messages = self.chat_history
+            else:
+                messages = [
+                    self.chat_history[0],
+                    # Some models, like Gemma, don't like it when there is no user message
+                    # so we add one.
+                    {"role": "user", "content": "Hello!"},
+                ]
 
         messages = preprocess_messages_for_llm(messages)
         return messages
