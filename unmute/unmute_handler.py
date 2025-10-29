@@ -441,10 +441,13 @@ class UnmuteHandler(AsyncStreamHandler):
                 await self._generate_response()
             return
 
+        # Generate initial greeting, but not for trivia quiz mode (it should wait for questions)
+        instructions = self.chatbot.get_instructions()
         if (
             len(self.chatbot.chat_history) == 1
             # Wait until the instructions are updated. A bit hacky
-            and self.chatbot.get_instructions() is not None
+            and instructions is not None
+            and instructions.type != "trivia_quiz"
         ):
             logger.info("Generating initial response.")
             await self._generate_response()
@@ -785,6 +788,11 @@ class UnmuteHandler(AsyncStreamHandler):
         await self.quest_manager.remove("llm")
 
     async def check_for_bot_goodbye(self):
+        # Skip goodbye detection for trivia quiz mode
+        instructions = self.chatbot.get_instructions()
+        if instructions and instructions.type == "trivia_quiz":
+            return
+
         last_assistant_message = next(
             (
                 msg
@@ -803,6 +811,11 @@ class UnmuteHandler(AsyncStreamHandler):
 
     async def detect_long_silence(self):
         """Handle situations where the user doesn't answer for a while."""
+        # Skip silence detection for trivia quiz mode
+        instructions = self.chatbot.get_instructions()
+        if instructions and instructions.type == "trivia_quiz":
+            return
+
         # Use voice-specific timeout or default
         silence_timeout = (
             self.timing_config.user_silence_timeout
