@@ -41,7 +41,10 @@ export function useGoogleAnalytics({
         voice_name: config.voiceName,
         is_custom_voice: config.voice.startsWith("custom:"),
         instructions: JSON.stringify(config.instructions),
-        instructions_language: config.instructions.language ?? "en",
+        instructions_language:
+          "language" in config.instructions
+            ? config.instructions.language ?? "en"
+            : "en",
         instructions_type: config.isCustomInstructions
           ? "constant_custom"
           : config.instructions.type,
