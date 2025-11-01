@@ -31,8 +31,8 @@ services:
       - KYUTAI_TTS_URL=ws://tts:8080
       - KYUTAI_LLM_URL=https://api.openai.com
       - KYUTAI_LLM_MODEL=gpt-4o
-      - KYUTAI_LLM_API_KEY=${OPEN_AI_API_KEY}
-      - NEWSAPI_API_KEY=${NEWSAPI_API_KEY}
+      - KYUTAI_LLM_API_KEY=$OPEN_AI_API_KEY
+      - NEWSAPI_API_KEY=$NEWSAPI_API_KEY
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.backend.rule=PathPrefix(`/api`)"
@@ -49,7 +49,7 @@ services:
     image: ghcr.io/michaldobiezynski/moshi-server:latest
     command: ["worker", "--config", "configs/tts.toml"]
     environment:
-      - HUGGING_FACE_HUB_TOKEN=${HUGGING_FACE_HUB_TOKEN}
+      - HUGGING_FACE_HUB_TOKEN=$HUGGING_FACE_HUB_TOKEN
     volumes:
       - ./volumes/hf-cache:/root/.cache/huggingface
       - ./volumes/cargo-registry-tts:/root/.cargo/registry
@@ -70,7 +70,7 @@ services:
     image: ghcr.io/michaldobiezynski/moshi-server:latest
     command: ["worker", "--config", "configs/stt.toml"]
     environment:
-      - HUGGING_FACE_HUB_TOKEN=${HUGGING_FACE_HUB_TOKEN}
+      - HUGGING_FACE_HUB_TOKEN=$HUGGING_FACE_HUB_TOKEN
     volumes:
       - ./volumes/hf-cache:/root/.cache/huggingface
       - ./volumes/cargo-registry-stt:/root/.cargo/registry
