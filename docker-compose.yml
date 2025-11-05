@@ -99,7 +99,3 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
-
-
-networks:
-  default:

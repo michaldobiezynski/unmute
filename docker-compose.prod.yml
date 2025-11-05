@@ -87,5 +87,3 @@ services:
               capabilities: [gpu]
     restart: unless-stopped
 
-networks:
-  default:
