@@ -163,23 +163,11 @@ const Unmute = () => {
   const onConnectButtonPress = async () => {
     // If we're not connected yet
     if (!shouldConnect) {
-      try {
-        const mediaStream = await askMicrophoneAccess();
-        // If we have access to the microphone:
-        if (mediaStream) {
-          await setupAudio(mediaStream);
-          setShouldConnect(true);
-        }
-      } catch (error) {
-        console.error("Failed to set up audio:", error);
-        setErrors((prev) => [
-          ...prev,
-          makeErrorItem(
-            error instanceof Error
-              ? `Audio setup failed: ${error.message}`
-              : "Failed to set up audio system. Please check browser console for details."
-          ),
-        ]);
+      const mediaStream = await askMicrophoneAccess();
+      // If we have access to the microphone:
+      if (mediaStream) {
+        await setupAudio(mediaStream);
+        setShouldConnect(true);
       }
     } else {
       // Copy transcript before disconnecting
