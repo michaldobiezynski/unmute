@@ -25,14 +25,12 @@ import clsx from "clsx";
 import { useBackendServerUrl } from "./useBackendServerUrl";
 import { RECORDING_CONSENT_STORAGE_KEY } from "./ConsentModal";
 import { useLocalStorage } from "./useLocalStorage";
-import { usePushToMute } from "./usePushToMute";
 import {
   Subtitles as SubtitlesIcon,
   ScrollText,
   Check,
   Volume2,
   VolumeX,
-  MicOff,
 } from "lucide-react";
 
 const Unmute = () => {
@@ -64,10 +62,6 @@ const Unmute = () => {
   const { analyticsOnDownloadRecording } = useGoogleAnalytics({
     shouldConnect,
     unmuteConfig,
-  });
-  const { isMuted } = usePushToMute({
-    muteKey: "Space",
-    isEnabled: shouldConnect,
   });
 
   // Check if the backend server is healthy. If we setHealthStatus to null,
@@ -122,11 +116,6 @@ const Unmute = () => {
   // Send microphone audio to the server (via useAudioProcessor below)
   const onOpusRecorded = useCallback(
     (opus: Uint8Array) => {
-      // Don't send audio when muted (push-to-mute feature)
-      if (isMuted) {
-        return;
-      }
-      
       sendMessage(
         JSON.stringify({
           type: "input_audio_buffer.append",
@@ -134,7 +123,7 @@ const Unmute = () => {
         })
       );
     },
-    [sendMessage, isMuted]
+    [sendMessage]
   );
 
   const { setupAudio, shutdownAudio, audioProcessor } =
@@ -334,13 +323,6 @@ const Unmute = () => {
           <span className="font-medium">Transcript copied to clipboard!</span>
         </div>
       )}
-      {/* Mute indicator */}
-      {isMuted && shouldConnect && (
-        <div className="fixed top-8 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2">
-          <MicOff size={20} />
-          <span className="font-medium">Microphone muted (holding Space)</span>
-        </div>
-      )}
       {/* The main full-height demo */}
       <div className="relative flex w-full min-h-screen flex-col text-white bg-background items-center">
         {/* z-index on the header to put it in front of the circles */}
@@ -442,7 +424,7 @@ const Unmute = () => {
                 __html: prettyPrintJson.toHtml(debugDict),
               }}></pre>
           </div>
-          <div>Subtitles: press S. Transcript: press T. Dev mode: press D. Mute: hold Space.</div>
+          <div>Subtitles: press S. Transcript: press T. Dev mode: press D.</div>
         </div>
       )}
       <canvas ref={recordingCanvasRef} className="hidden" />
