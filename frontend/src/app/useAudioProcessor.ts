@@ -7,9 +7,17 @@ const getAudioWorkletNode = async (
 ) => {
   try {
     return new AudioWorkletNode(audioContext, name);
-  } catch {
-    await audioContext.audioWorklet.addModule(`/${name}.js`);
-    return new AudioWorkletNode(audioContext, name, {});
+  } catch (firstError) {
+    console.debug(`AudioWorkletNode not registered, loading module: ${name}`, firstError);
+    try {
+      await audioContext.audioWorklet.addModule(`/${name}.js`);
+      return new AudioWorkletNode(audioContext, name, {});
+    } catch (moduleError) {
+      console.error(`Failed to load audio worklet module: ${name}.js`, moduleError);
+      console.error('Current location:', window.location.href);
+      console.error('Attempting to load from:', `${window.location.origin}/${name}.js`);
+      throw new Error(`Failed to load audio worklet: ${moduleError instanceof Error ? moduleError.message : 'Unknown error'}`);
+    }
   }
 };
 
