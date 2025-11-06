@@ -510,9 +510,15 @@ class UnmuteHandler(AsyncStreamHandler):
             logger.info("Already flushing, ignoring manual commit")
             return
         
-        if self.chatbot.conversation_state() != "user_speaking":
-            logger.info("Not in user_speaking state, ignoring manual commit")
-            return
+        conv_state = self.chatbot.conversation_state()
+        
+        if conv_state == "bot_speaking":
+            logger.info("Bot is speaking, manual commit will interrupt")
+            await self.interrupt_bot()
+            await self.add_chat_message_delta("", "user")
+        elif conv_state == "waiting_for_user":
+            logger.info("Waiting for user, starting user message on manual commit")
+            await self.add_chat_message_delta("", "user")
         
         logger.info("Manual commit triggered")
         await self.output_queue.put(ora.InputAudioBufferSpeechStopped())
