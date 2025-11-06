@@ -31,22 +31,16 @@ import {
   Check,
   Volume2,
   VolumeX,
-  Mic,
-  MicOff,
 } from "lucide-react";
 
 const Unmute = () => {
-  const [isMicMuted, setIsMicMuted] = useState(false);
-  
   const {
     isDevMode,
     showSubtitles,
     toggleSubtitles,
     showTranscript,
     toggleTranscript,
-  } = useKeyboardShortcuts(() => {
-    handleToggleMute();
-  });
+  } = useKeyboardShortcuts();
   const [debugDict, setDebugDict] = useState<object | null>(null);
   const [unmuteConfig, setUnmuteConfig] = useLocalStorage<UnmuteConfig>(
     "unmuteConfig",
@@ -132,7 +126,7 @@ const Unmute = () => {
     [sendMessage]
   );
 
-  const { setupAudio, shutdownAudio, audioProcessor, toggleMute, setMuted } =
+  const { setupAudio, shutdownAudio, audioProcessor } =
     useAudioProcessor(onOpusRecorded);
   const {
     canvasRef: recordingCanvasRef,
@@ -144,13 +138,6 @@ const Unmute = () => {
     audioProcessor: audioProcessor.current,
     chatHistory: rawChatHistory,
   });
-
-  const handleToggleMute = () => {
-    if (shouldConnect) {
-      const newMutedState = toggleMute();
-      setIsMicMuted(newMutedState);
-    }
-  };
 
   const copyTranscriptToClipboard = async () => {
     if (chatHistory.length === 0) {
@@ -181,15 +168,12 @@ const Unmute = () => {
       if (mediaStream) {
         await setupAudio(mediaStream);
         setShouldConnect(true);
-        setIsMicMuted(false);
-        setMuted(false);
       }
     } else {
       // Copy transcript before disconnecting
       await copyTranscriptToClipboard();
       setShouldConnect(false);
       shutdownAudio();
-      setIsMicMuted(false);
     }
   };
 
@@ -327,13 +311,6 @@ const Unmute = () => {
           <span className="font-medium">Transcript copied to clipboard!</span>
         </div>
       )}
-      {/* Mute notification */}
-      {isMicMuted && shouldConnect && (
-        <div className="fixed top-8 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2">
-          <MicOff size={20} />
-          <span className="font-medium">Microphone muted (Press M to unmute)</span>
-        </div>
-      )}
       {/* The main full-height demo */}
       <div className="relative flex w-full min-h-screen flex-col text-white bg-background items-center">
         {/* z-index on the header to put it in front of the circles */}
@@ -405,13 +382,6 @@ const Unmute = () => {
             {unmuteConfig.textOnlyMode ? "enable audio" : "text only"}
           </SlantedButton>
           <SlantedButton
-            onClick={handleToggleMute}
-            kind={shouldConnect ? (isMicMuted ? "primary" : "secondary") : "disabled"}
-            extraClasses="w-full max-w-96 flex items-center justify-center gap-2">
-            {isMicMuted ? <MicOff size={20} /> : <Mic size={20} />}
-            {isMicMuted ? "unmute mic" : "mute mic"}
-          </SlantedButton>
-          <SlantedButton
             onClick={onConnectButtonPress}
             kind={shouldConnect ? "secondary" : "primary"}
             extraClasses="w-full max-w-96">
@@ -442,7 +412,7 @@ const Unmute = () => {
                 __html: prettyPrintJson.toHtml(debugDict),
               }}></pre>
           </div>
-          <div>Subtitles: press S. Transcript: press T. Mute: press M. Dev mode: press D.</div>
+          <div>Subtitles: press S. Transcript: press T. Dev mode: press D.</div>
         </div>
       )}
       <canvas ref={recordingCanvasRef} className="hidden" />
