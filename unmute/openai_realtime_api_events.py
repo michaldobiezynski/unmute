@@ -113,10 +113,6 @@ class InputAudioBufferSpeechStopped(
     """A pause was detected by the VAD."""
 
 
-class InputAudioBufferCommit(BaseEvent[Literal["input_audio_buffer.commit"]]):
-    """Manual commit of audio buffer, triggers immediate response generation."""
-
-
 class Response(BaseModel):
     object: Literal["realtime.response"] = "realtime.response"
     # We currently only use in_progress
@@ -200,7 +196,6 @@ ServerEvent = Union[
 ClientEvent = Union[
     SessionUpdate,
     InputAudioBufferAppend,
-    InputAudioBufferCommit,
     # Used internally for recording, we're not expecting the user to send this
     UnmuteInputAudioBufferAppendAnonymized,
 ]

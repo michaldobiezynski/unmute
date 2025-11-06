@@ -499,39 +499,6 @@ class UnmuteHandler(AsyncStreamHandler):
                 )
                 await self._generate_response()
 
-    async def manual_commit(self) -> None:
-        """Manually commit the audio buffer and trigger response generation."""
-        stt = self.stt
-        if stt is None:
-            logger.warning("Cannot commit: STT not initialised")
-            return
-        
-        if self.stt_end_of_flush_time is not None:
-            logger.info("Already flushing, ignoring manual commit")
-            return
-        
-        conv_state = self.chatbot.conversation_state()
-        
-        if conv_state == "bot_speaking":
-            logger.info("Bot is speaking, manual commit will interrupt")
-            await self.interrupt_bot()
-            await self.add_chat_message_delta("", "user")
-        elif conv_state == "waiting_for_user":
-            logger.info("Waiting for user, starting user message on manual commit")
-            await self.add_chat_message_delta("", "user")
-        
-        logger.info("Manual commit triggered")
-        await self.output_queue.put(ora.InputAudioBufferSpeechStopped())
-        
-        self.stt_end_of_flush_time = stt.current_time + stt.delay_sec
-        self.stt_flush_timer = Stopwatch()
-        num_frames = (
-            int(math.ceil(stt.delay_sec / FRAME_TIME_SEC)) + 1
-        )  # some safety margin.
-        zero = np.zeros(SAMPLES_PER_FRAME, dtype=np.float32)
-        for _ in range(num_frames):
-            await stt.send_audio(zero)
-
     def determine_pause(self) -> bool:
         stt = self.stt
         if stt is None:
