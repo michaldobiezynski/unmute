@@ -27,6 +27,7 @@ export const useAudioProcessor = (
   onOpusRecorded: (chunk: Uint8Array) => void
 ) => {
   const audioProcessorRef = useRef<AudioProcessor | null>(null);
+  const isMutedRef = useRef<boolean>(false);
 
   const setupAudio = useCallback(
     async (mediaStream: MediaStream) => {
@@ -119,7 +120,9 @@ export const useAudioProcessor = (
           );
           lastpos = opusRecorder.encodedSamplePosition;
         }
-        onOpusRecorded(data);
+        if (!isMutedRef.current) {
+          onOpusRecorded(data);
+        }
       };
       audioProcessorRef.current = {
         audioContext,
@@ -154,9 +157,25 @@ export const useAudioProcessor = (
     }
   }, []);
 
+  const toggleMute = useCallback(() => {
+    isMutedRef.current = !isMutedRef.current;
+    return isMutedRef.current;
+  }, []);
+
+  const setMuted = useCallback((muted: boolean) => {
+    isMutedRef.current = muted;
+  }, []);
+
+  const isMuted = useCallback(() => {
+    return isMutedRef.current;
+  }, []);
+
   return {
     setupAudio,
     shutdownAudio,
     audioProcessor: audioProcessorRef,
+    toggleMute,
+    setMuted,
+    isMuted,
   };
 };
