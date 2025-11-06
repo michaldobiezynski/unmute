@@ -84,7 +84,7 @@ export const useAudioProcessor = (
         mediaTrackConstraints: {
           audio: {
             echoCancellation: true,
-            noiseSuppression: false,
+            noiseSuppression: true,
             autoGainControl: true,
             channelCount: 1,
           },
