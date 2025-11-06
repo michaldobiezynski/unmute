@@ -31,7 +31,6 @@ import {
   Check,
   Volume2,
   VolumeX,
-  Send,
 } from "lucide-react";
 
 const Unmute = () => {
@@ -187,17 +186,6 @@ const Unmute = () => {
         setErrors((prev) => [...prev, makeErrorItem(e.message)]);
       }
     }
-  };
-
-  const onCommitButtonPress = () => {
-    if (!shouldConnect) {
-      return;
-    }
-    sendMessage(
-      JSON.stringify({
-        type: "input_audio_buffer.commit",
-      })
-    );
   };
 
   // If the websocket connection is closed, shut down the audio processing
@@ -392,13 +380,6 @@ const Unmute = () => {
               <Volume2 size={20} />
             )}
             {unmuteConfig.textOnlyMode ? "enable audio" : "text only"}
-          </SlantedButton>
-          <SlantedButton
-            onClick={onCommitButtonPress}
-            kind={shouldConnect ? "primary" : "disabled"}
-            extraClasses="w-full max-w-96 flex items-center justify-center gap-2">
-            <Send size={20} />
-            send message
           </SlantedButton>
           <SlantedButton
             onClick={onConnectButtonPress}
