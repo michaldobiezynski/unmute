@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 const ALLOW_DEV_MODE = false;
 
-const useKeyboardShortcuts = () => {
+const useKeyboardShortcuts = (onToggleMute?: () => void) => {
   // local storage persistence disabled in case random users activate it accidentally
   // useLocalStorage("useDevMode", false)
   const [isDevMode, setIsDevMode] = useState(false);
@@ -42,13 +42,16 @@ const useKeyboardShortcuts = () => {
       if (!isInputField && (event.key === "T" || event.key === "t")) {
         toggleTranscript();
       }
+      if (!isInputField && (event.key === "M" || event.key === "m")) {
+        onToggleMute?.();
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [toggleSubtitles, toggleTranscript]);
+  }, [toggleSubtitles, toggleTranscript, onToggleMute]);
 
   return { isDevMode, showSubtitles, toggleSubtitles, showTranscript, toggleTranscript };
 };
