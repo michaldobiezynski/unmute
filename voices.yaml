@@ -4,7 +4,7 @@
     type: trivia_quiz
   timing:
     user_silence_timeout: 30.0
-    pause_threshold: 0.35
+    pause_threshold: 0.2
     interruption_threshold: 0.3
     attack_time: 0.01
     release_time: 0.01
