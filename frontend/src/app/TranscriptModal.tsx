@@ -18,6 +18,7 @@ const TranscriptModal = ({
   const contentRef = useRef<HTMLDivElement>(null);
   const [isCopied, setIsCopied] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
+  const [autoScroll, setAutoScroll] = useState(true);
 
   // Format chat history as text for copying
   const formatTranscript = () => {
@@ -47,12 +48,12 @@ const TranscriptModal = ({
     }
   };
 
-  // Auto-scroll to bottom when new messages arrive
+  // Auto-scroll to bottom when enabled
   useEffect(() => {
-    if (isVisible && contentRef.current) {
+    if (autoScroll && isVisible && contentRef.current) {
       contentRef.current.scrollTop = contentRef.current.scrollHeight;
     }
-  }, [chatHistory, isVisible]);
+  }, [chatHistory, isVisible, autoScroll]);
 
   // Close on escape key
   useEffect(() => {
@@ -93,6 +94,15 @@ const TranscriptModal = ({
             Conversation Transcript
           </h2>
           <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 text-lightgray cursor-pointer">
+              <input
+                type="checkbox"
+                checked={autoScroll}
+                onChange={(e) => setAutoScroll(e.target.checked)}
+                className="w-4 h-4 accent-green cursor-pointer"
+              />
+              <span className="text-sm">Auto-scroll</span>
+            </label>
             <button
               onClick={handleCopyTranscript}
               className="flex items-center gap-2 text-lightgray hover:text-green transition-colors"
