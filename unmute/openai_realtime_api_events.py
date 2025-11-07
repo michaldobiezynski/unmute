@@ -69,6 +69,7 @@ class SessionConfig(BaseModel):
     voice: str | None = None
     allow_recording: bool
     text_only_mode: bool = False
+    disable_echo_cancellation: bool = False
 
 
 class SessionUpdate(BaseEvent[Literal["session.update"]]):

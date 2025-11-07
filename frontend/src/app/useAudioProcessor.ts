@@ -29,7 +29,7 @@ export const useAudioProcessor = (
   const audioProcessorRef = useRef<AudioProcessor | null>(null);
 
   const setupAudio = useCallback(
-    async (mediaStream: MediaStream) => {
+    async (mediaStream: MediaStream, disableEchoCancellation: boolean = false) => {
       if (audioProcessorRef.current) return audioProcessorRef.current;
 
       const audioContext = new AudioContext();
@@ -83,9 +83,9 @@ export const useAudioProcessor = (
       const recorderOptions = {
         mediaTrackConstraints: {
           audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
+            echoCancellation: !disableEchoCancellation,
+            noiseSuppression: !disableEchoCancellation,
+            autoGainControl: !disableEchoCancellation,
             channelCount: 1,
           },
           video: false,

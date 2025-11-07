@@ -163,10 +163,11 @@ const Unmute = () => {
   const onConnectButtonPress = async () => {
     // If we're not connected yet
     if (!shouldConnect) {
-      const mediaStream = await askMicrophoneAccess();
+      const disableEchoCancellation = unmuteConfig.instructions.type === "trivia_quiz";
+      const mediaStream = await askMicrophoneAccess(disableEchoCancellation);
       // If we have access to the microphone:
       if (mediaStream) {
-        await setupAudio(mediaStream);
+        await setupAudio(mediaStream, disableEchoCancellation);
         setShouldConnect(true);
       }
     } else {
@@ -277,6 +278,7 @@ const Unmute = () => {
           voice: unmuteConfig.voice,
           allow_recording: recordingConsent,
           text_only_mode: unmuteConfig.textOnlyMode,
+          disable_echo_cancellation: unmuteConfig.instructions.type === "trivia_quiz",
         },
       })
     );
