@@ -1,11 +1,12 @@
 # See NOTE comments for places to modify.
 services:
   traefik:
-    image: traefik:v3.5
+    image: traefik:v3.2
     command:
       # Swarm provider configuration
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.endpoint=unix:///var/run/docker.sock"
 
       # This is set up for HTTP. If you want HTTPS support for production, use Docker Swarm
       # (check out swarm-deploy.yml) or ask ChatGPT to modify this file for you.
