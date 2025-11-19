@@ -38,6 +38,8 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "letsencrypt:/letsencrypt" # Persistent storage for SSL certificates
+    environment:
+      - DOCKER_API_VERSION=1.45
     deploy:
       update_config:
         order: start-first # Since we can't have multiple replicas, at least we can start the new container first.
