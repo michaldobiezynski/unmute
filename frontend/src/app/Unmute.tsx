@@ -126,7 +126,7 @@ const Unmute = () => {
     [sendMessage]
   );
 
-  const { setupAudio, shutdownAudio, audioProcessor } =
+  const { setupAudio, startRecording, shutdownAudio, audioProcessor } =
     useAudioProcessor(onOpusRecorded);
   const {
     canvasRef: recordingCanvasRef,
@@ -283,6 +283,15 @@ const Unmute = () => {
       })
     );
   }, [unmuteConfig, readyState, sendMessage]);
+
+  // Start recording only after WebSocket is fully open to avoid race conditions
+  // where audio packets arrive before the backend is ready
+  useEffect(() => {
+    if (readyState === ReadyState.OPEN && audioProcessor.current) {
+      console.debug("WebSocket is open, starting audio recording");
+      startRecording();
+    }
+  }, [readyState, audioProcessor, startRecording]);
 
   // Disconnect when the voice or instruction changes.
   // TODO: If it's a voice change, immediately reconnect with the new voice.

@@ -80,16 +80,10 @@ export const useAudioProcessor = (
       // The /2 is a bit optional, but won't hurt for recording the mic.
       // Note that bufferLength actually has 0 impact for mono audio, only
       // the frameSize and maxFramesPerPage seems to have any.
+      // NOTE: We don't pass mediaTrackConstraints here because we're using our own
+      // MediaStream that was already obtained with the correct constraints.
       const recorderOptions = {
-        mediaTrackConstraints: {
-          audio: {
-            echoCancellation: !disableEchoCancellation,
-            noiseSuppression: !disableEchoCancellation,
-            autoGainControl: !disableEchoCancellation,
-            channelCount: 1,
-          },
-          video: false,
-        },
+        sourceNode: source,
         encoderPath: "/encoderWorker.min.js",
         bufferLength: Math.round((960 * audioContext.sampleRate) / 24000),
         encoderFrameSize: 20,
@@ -130,14 +124,26 @@ export const useAudioProcessor = (
         outputAnalyser,
         mediaStreamDestination,
       };
-      // Resume the audio context if it was suspended
-      audioProcessorRef.current.audioContext.resume();
-      opusRecorder.start();
+      
+      // Ensure the audio context is actually running before proceeding
+      await audioProcessorRef.current.audioContext.resume();
+      
+      // NOTE: We don't start the OpusRecorder here anymore - it will be started
+      // when the WebSocket connection is fully open to avoid race conditions
 
       return audioProcessorRef.current;
     },
     [onOpusRecorded]
   );
+
+  const startRecording = useCallback(() => {
+    if (audioProcessorRef.current) {
+      audioProcessorRef.current.opusRecorder.start();
+      console.debug("OpusRecorder started");
+    } else {
+      console.warn("Cannot start recording: audioProcessor not initialized");
+    }
+  }, []);
 
   const shutdownAudio = useCallback(() => {
     if (audioProcessorRef.current) {
@@ -156,6 +162,7 @@ export const useAudioProcessor = (
 
   return {
     setupAudio,
+    startRecording,
     shutdownAudio,
     audioProcessor: audioProcessorRef,
   };

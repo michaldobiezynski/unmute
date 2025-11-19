@@ -1,8 +1,9 @@
 declare module "opus-recorder" {
   interface RecorderOptions {
-    // Confusing naming here because MediaTrackConstraints also exists as a type,
-    // but this is actually a MediaStreamConstraints object
+    // Either provide mediaTrackConstraints (and the library calls getUserMedia internally)
+    // or provide sourceNode (if you already have a MediaStream)
     mediaTrackConstraints?: MediaStreamConstraints;
+    sourceNode?: MediaStreamAudioSourceNode;
     encoderPath: string;
     bufferLength: number;
     encoderFrameSize: number;
