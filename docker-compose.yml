@@ -1,7 +1,7 @@
 # See NOTE comments for places to modify.
 services:
   traefik:
-    image: traefik:v3.2
+    image: traefik:v2.11
     command:
       # Swarm provider configuration
       - "--providers.docker=true"
