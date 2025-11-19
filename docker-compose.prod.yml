@@ -3,7 +3,7 @@
 
 services:
   traefik:
-    image: traefik:v3.3.1
+    image: traefik:v3.5
     command:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
