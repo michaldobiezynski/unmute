@@ -72,6 +72,10 @@ services:
       - ./volumes/uv-cache:/root/.cache/uv
       - /tmp/models/:/models
       - ./volumes/tts-logs:/logs
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     deploy:
       resources:
         reservations:
@@ -95,6 +99,10 @@ services:
       - ./volumes/uv-cache:/root/.cache/uv
       - /tmp/models/:/models
       - ./volumes/stt-logs:/logs
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     deploy:
       resources:
         reservations:
