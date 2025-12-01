@@ -21,7 +21,10 @@ export interface AudioProcessor {
   inputAnalyser: AnalyserNode;
   outputAnalyser: AnalyserNode;
   mediaStreamDestination: MediaStreamAudioDestinationNode;
+  inputGainNode: GainNode | null;
 }
+
+const TRIVIA_MODE_GAIN_BOOST = 2.5;
 
 export const useAudioProcessor = (
   onOpusRecorded: (chunk: Uint8Array) => void
@@ -38,15 +41,28 @@ export const useAudioProcessor = (
         "audio-output-processor"
       );
       const source = audioContext.createMediaStreamSource(mediaStream);
-      // source.connect(inputWorklet);
+
+      // When echo cancellation is disabled (trivia mode), we add a gain boost
+      // to compensate for the lack of automatic gain control
+      let inputGainNode: GainNode | null = null;
+      let processedSource: AudioNode = source;
+      
+      if (disableEchoCancellation) {
+        inputGainNode = audioContext.createGain();
+        inputGainNode.gain.value = TRIVIA_MODE_GAIN_BOOST;
+        source.connect(inputGainNode);
+        processedSource = inputGainNode;
+        console.debug(`Trivia mode: applying ${TRIVIA_MODE_GAIN_BOOST}x gain boost`);
+      }
+
       const inputAnalyser = audioContext.createAnalyser();
       inputAnalyser.fftSize = 2048;
-      source.connect(inputAnalyser);
+      processedSource.connect(inputAnalyser);
 
       const mediaStreamDestination =
         audioContext.createMediaStreamDestination();
       outputWorklet.connect(mediaStreamDestination);
-      source.connect(mediaStreamDestination);
+      processedSource.connect(mediaStreamDestination);
 
       outputWorklet.connect(audioContext.destination);
       const outputAnalyser = audioContext.createAnalyser();
@@ -83,7 +99,7 @@ export const useAudioProcessor = (
       // NOTE: We don't pass mediaTrackConstraints here because we're using our own
       // MediaStream that was already obtained with the correct constraints.
       const recorderOptions = {
-        sourceNode: source,
+        sourceNode: processedSource,
         encoderPath: "/encoderWorker.min.js",
         bufferLength: Math.round((960 * audioContext.sampleRate) / 24000),
         encoderFrameSize: 20,
@@ -123,6 +139,7 @@ export const useAudioProcessor = (
         inputAnalyser,
         outputAnalyser,
         mediaStreamDestination,
+        inputGainNode,
       };
       
       // Ensure the audio context is actually running before proceeding
@@ -147,11 +164,14 @@ export const useAudioProcessor = (
 
   const shutdownAudio = useCallback(() => {
     if (audioProcessorRef.current) {
-      const { audioContext, opusRecorder, outputWorklet } =
+      const { audioContext, opusRecorder, outputWorklet, inputGainNode } =
         audioProcessorRef.current;
 
       // Disconnect all nodes
       outputWorklet.disconnect();
+      if (inputGainNode) {
+        inputGainNode.disconnect();
+      }
       audioContext.close();
       opusRecorder.stop();
 
