@@ -31,6 +31,7 @@ import {
   Check,
   Volume2,
   VolumeX,
+  Send,
 } from "lucide-react";
 
 const Unmute = () => {
@@ -49,6 +50,7 @@ const Unmute = () => {
   const [rawChatHistory, setRawChatHistory] = useState<ChatMessage[]>([]);
   const chatHistory = compressChatHistory(rawChatHistory);
   const [showCopyNotification, setShowCopyNotification] = useState(false);
+  const [textInput, setTextInput] = useState("");
 
   const { microphoneAccess, askMicrophoneAccess } = useMicrophoneAccess();
 
@@ -157,6 +159,25 @@ const Unmute = () => {
       setTimeout(() => setShowCopyNotification(false), 3000);
     } catch (error) {
       console.error("Failed to copy transcript:", error);
+    }
+  };
+
+  const sendTextMessage = useCallback(() => {
+    if (!textInput.trim() || !shouldConnect) return;
+
+    sendMessage(
+      JSON.stringify({
+        type: "conversation.item.create",
+        text: textInput.trim(),
+      })
+    );
+    setTextInput("");
+  }, [textInput, shouldConnect, sendMessage]);
+
+  const handleTextInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendTextMessage();
     }
   };
 
@@ -398,8 +419,6 @@ const Unmute = () => {
             extraClasses="w-full max-w-96">
             {shouldConnect ? "disconnect" : "connect"}
           </SlantedButton>
-          {/* Maybe we don't need to explicitly show the status */}
-          {/* {renderConnectionStatus(readyState, false)} */}
           {microphoneAccess === "refused" && (
             <div className="text-red">
               {"You'll need to allow microphone access to use the demo. " +
@@ -407,6 +426,42 @@ const Unmute = () => {
             </div>
           )}
         </div>
+        {shouldConnect && (
+          <div className="w-full max-w-2xl px-3 mb-6">
+            <div className="relative flex items-center">
+              <input
+                type="text"
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                onKeyDown={handleTextInputKeyDown}
+                placeholder="Type a message..."
+                data-testid="text-input"
+                className={clsx(
+                  "w-full px-4 py-3 pr-14",
+                  "bg-darkgray text-white placeholder-lightgray",
+                  "border-2 border-dashed border-white",
+                  "transform -skew-x-3",
+                  "focus:outline-none focus:border-green",
+                  "transition-colors duration-200"
+                )}
+              />
+              <button
+                onClick={sendTextMessage}
+                disabled={!textInput.trim()}
+                data-testid="send-text-button"
+                className={clsx(
+                  "absolute right-2 p-2",
+                  "transform -skew-x-3",
+                  "transition-colors duration-200",
+                  textInput.trim()
+                    ? "text-green hover:text-white cursor-pointer"
+                    : "text-lightgray cursor-not-allowed"
+                )}>
+                <Send size={24} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
       <TranscriptModal
         chatHistory={chatHistory}

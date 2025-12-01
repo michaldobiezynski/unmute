@@ -835,6 +835,31 @@ class UnmuteHandler(AsyncStreamHandler):
             logger.info("Long silence detected.")
             await self.add_chat_message_delta(USER_SILENCE_MARKER, "user")
 
+    async def receive_text_input(self, text: str):
+        """Handle text input from the user (typed message instead of speech)."""
+        if not text.strip():
+            return
+
+        # If the bot is speaking, interrupt it first
+        if self.chatbot.conversation_state() == "bot_speaking":
+            logger.info("Text input received while bot speaking, interrupting")
+            await self.interrupt_bot()
+
+        # Add the text to the chat history
+        await self.chatbot.add_chat_message_delta(text, "user")
+
+        # Send transcription event so the frontend can display it
+        await self.output_queue.put(
+            ora.ConversationItemInputAudioTranscriptionDelta(
+                delta=text,
+                start_time=self.audio_received_sec(),
+            )
+        )
+
+        # Trigger response generation
+        logger.info(f"Text input received: {text[:100]}...")
+        await self._generate_response()
+
     async def update_session(self, session: ora.SessionConfig):
         if session.instructions:
             self.chatbot.set_instructions(session.instructions)

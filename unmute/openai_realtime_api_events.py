@@ -84,6 +84,12 @@ class InputAudioBufferAppend(BaseEvent[Literal["input_audio_buffer.append"]]):
     audio: str  # Base64-encoded Opus data
 
 
+class ConversationItemCreate(BaseEvent[Literal["conversation.item.create"]]):
+    """Send a text message from the user to the conversation."""
+
+    text: str
+
+
 class UnmuteInputAudioBufferAppendAnonymized(
     BaseEvent[Literal["unmute.input_audio_buffer.append_anonymized"]]
 ):
@@ -197,6 +203,7 @@ ServerEvent = Union[
 ClientEvent = Union[
     SessionUpdate,
     InputAudioBufferAppend,
+    ConversationItemCreate,
     # Used internally for recording, we're not expecting the user to send this
     UnmuteInputAudioBufferAppendAnonymized,
 ]

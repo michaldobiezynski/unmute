@@ -479,6 +479,9 @@ async def receive_loop(
             await handler.update_session(message.session)
             await emit_queue.put(ora.SessionUpdated(session=message.session))
 
+        elif isinstance(message, ora.ConversationItemCreate):
+            await handler.receive_text_input(message.text)
+
         elif isinstance(message, ora.UnmuteAdditionalOutputs):
             # Don't record this: it's a debugging message and can be verbose. Anything
             # important to store should be in the other event types.
